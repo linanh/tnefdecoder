@@ -2,16 +2,16 @@ package tnefdecoder
 
 import (
 	"strings"
-	rtf "rtfconverter"
 
+	rtf "github.com/linanh/rtfconverter"
 )
 
 /**
  * may be any value type; when you use it, usualy you know what type has the attribute value so you can do a type assertion
  */
- type GenericValue interface{}
+type GenericValue interface{}
 
- type TnefObject struct {
+type TnefObject struct {
 	// tnef attributes (extracted from TNEFVersion, OEMCodePage, MessageAttribute) + MAPI attributes (extracted from MessageProps)
 	Attributes []*Attribute
 
@@ -20,8 +20,8 @@ import (
 
 	TextBody []byte
 	HtmlBody []byte
+	Encoding string
 }
-
 
 /**
  * get an attribute by MAPI ID/TNEF Attribute ID
@@ -37,64 +37,62 @@ func (t *TnefObject) GetAttribute(attrId int, attrType string) (attr *Attribute)
 
 func (t *TnefObject) GetHtmlBody() []byte {
 	if t.HtmlBody == nil {
-	   attr := t.GetAttribute(MapiPidTagBodyHtml, "mapi")
+		attr := t.GetAttribute(MapiPidTagBodyHtml, "mapi")
 
-	   if attr != nil {
-		   t.HtmlBody = []byte(attr.GetStringValue())
-	   } else {
-		   t.HtmlBody = []byte("")
-	   }
-   }
+		if attr != nil {
+			t.HtmlBody = []byte(attr.GetStringValue())
+		} else {
+			t.HtmlBody = []byte("")
+		}
+	}
 
-   return t.HtmlBody
+	return t.HtmlBody
 }
 
-func (t *TnefObject) SetHtmlBody(v []byte)  {
+func (t *TnefObject) SetHtmlBody(v []byte) {
 	t.HtmlBody = v
 }
 
-
 func (t *TnefObject) GetTextBody() []byte {
-   if t.TextBody == nil {
-	   attr := t.GetAttribute(MapiPidTagBody, "mapi")
+	if t.TextBody == nil {
+		attr := t.GetAttribute(MapiPidTagBody, "mapi")
 
-	   if attr != nil {
-		   t.TextBody = []byte(attr.GetStringValue())
-	   } else {
-		   t.TextBody = []byte("")
-	   }
-   }
+		if attr != nil {
+			t.TextBody = []byte(attr.GetStringValue())
+		} else {
+			t.TextBody = []byte("")
+		}
+	}
 
-   return t.TextBody
+	return t.TextBody
 }
 
-func (t *TnefObject) SetTextBody(v []byte)  {
-   t.TextBody = v
+func (t *TnefObject) SetTextBody(v []byte) {
+	t.TextBody = v
 }
 
 /**
 * return message class
 * If the value of the attMessageClass or attOriginalMessageClass attribute begins with the string "Microsoft Mail v3.0 ",
 * the TNEF Reader MUST ignore the "Microsoft Mail v3.0 " prefix when attempting to match the value of the attMessageClass or attOriginalMessageClass
-*/
+ */
 
 func (t *TnefObject) GetMessageClass() string {
-   attr := t.GetAttribute(AttMessageClass, "mapped")
-   messageClass := ""
-   if attr != nil {
-	   messageClass = attr.GetStringValue()
-   }
-   if messageClass == "" {
-	   attr = t.GetAttribute(AttOriginalMessageClass, "mapped")
-	   if attr != nil {
-		   messageClass = attr.GetStringValue()
-	   }
-   }
-   messageClass = strings.TrimPrefix(messageClass, "Microsoft Mail v3.0 ")
+	attr := t.GetAttribute(AttMessageClass, "mapped")
+	messageClass := ""
+	if attr != nil {
+		messageClass = attr.GetStringValue()
+	}
+	if messageClass == "" {
+		attr = t.GetAttribute(AttOriginalMessageClass, "mapped")
+		if attr != nil {
+			messageClass = attr.GetStringValue()
+		}
+	}
+	messageClass = strings.TrimPrefix(messageClass, "Microsoft Mail v3.0 ")
 
-   return messageClass
+	return messageClass
 }
-
 
 /**
  * Value Meaning
@@ -104,19 +102,18 @@ func (t *TnefObject) GetMessageClass() string {
  * 0x00000003 HTML body
  * 0x00000004 Clear-signed body
  */
- func (t *TnefObject) GetBodyFormat() int {
+func (t *TnefObject) GetBodyFormat() int {
 	attr := t.GetAttribute(MapiPidTagNativeBody, "mapi")
-	if attr != nil{
+	if attr != nil {
 		return attr.GetIntValue()
 	}
 	return 0
 }
 
-
- /**
-  *  decode compressed RTF from MapiPidTagRtfCompressed
-  *  if exists, will rewrite TNEF object TEXT / HTML value or add an attachment
-  */
+/**
+ *  decode compressed RTF from MapiPidTagRtfCompressed
+ *  if exists, will rewrite TNEF object TEXT / HTML value or add an attachment
+ */
 func (t *TnefObject) DecodeRtf() {
 	rtfContentAttr := t.GetAttribute(MapiPidTagRtfCompressed, "mapi")
 	if rtfContentAttr != nil && len(rtfContentAttr.GetBinaryValue()) > 0 {
@@ -124,9 +121,8 @@ func (t *TnefObject) DecodeRtf() {
 		/**
 		*  Try to decompress RTF
 		*  @TODO: to check if we can use MapiPidTagNativeBody or MapiPidTagRtfInSync
-		*/
+		 */
 		data, err := rtf.Decompress(rtfContentAttr.GetBinaryValue())
-
 
 		if err == nil {
 
@@ -135,12 +131,12 @@ func (t *TnefObject) DecodeRtf() {
 			c := rtf.NewConverter()
 			c.SetBytes(data)
 			html, err := c.Convert("html")
-			if err == nil && html !=nil && len(html) > 0 {
+			if err == nil && html != nil && len(html) > 0 {
 				attachRtf = false
 				t.SetHtmlBody(html)
 			} else {
 				text, err := c.Convert("text")
-				if err == nil && text !=nil && len(text) > 0 {
+				if err == nil && text != nil && len(text) > 0 {
 					attachRtf = false
 					t.SetTextBody(text)
 				}
@@ -156,4 +152,3 @@ func (t *TnefObject) DecodeRtf() {
 		}
 	}
 }
-

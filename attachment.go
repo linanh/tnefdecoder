@@ -6,28 +6,28 @@ package tnefdecoder
 
 import (
 	"strings"
-//	"fmt"
+
+	rtf "github.com/linanh/rtfconverter"
+	//	"fmt"
 )
 
 func NewAttachment() *Attachment {
 	return &Attachment{
-		TnefObject: &TnefObject {},
-		Filename: "",
-		Data: []byte{},
+		TnefObject:         &TnefObject{},
+		Filename:           "",
+		Data:               []byte{},
 		DecodedAttRendData: make(map[string]int),
 	}
 }
 
-
 type Attachment struct {
 	*TnefObject
 	Filename string
-	Data []byte
+	Data     []byte
 
 	// custom attributes that needs specific decoders
 	DecodedAttRendData map[string]int
 }
-
 
 /**
  * set attachment filename
@@ -49,7 +49,7 @@ func (a *Attachment) SetData(d []byte) {
 func (a *Attachment) GetData() []byte {
 	if len(a.Data) == 0 {
 		// if the data is not already set (custom, using SetData, or previously requested) try to extract the data from attributes
-		attr  := a.GetAttribute(AttAttachData, "mapped")
+		attr := a.GetAttribute(AttAttachData, "mapped")
 
 		if attr != nil {
 			a.SetData(attr.Data)
@@ -59,21 +59,20 @@ func (a *Attachment) GetData() []byte {
 	return a.Data
 }
 
-
 func (a *Attachment) GetFilename() string {
 	var attr *Attribute
 
 	/*
-	attr  = a.GetAttribute(AttAttachTransportFilename, "mapped")
+		attr  = a.GetAttribute(AttAttachTransportFilename, "mapped")
 
-	if attr != nil {
-		fmt.Println("Transport Name:", attr.GetStringValue())
-	}
+		if attr != nil {
+			fmt.Println("Transport Name:", attr.GetStringValue())
+		}
 	*/
 
 	if a.Filename == "" {
 		// if the Filename is not already set (custom, using SetFilename, or previously requested) try to extract the data from attributes
-		attr  = a.GetAttribute(AttAttachTitle, "mapped")
+		attr = a.GetAttribute(MapiPidTagAttachFilename, "mapi")
 		if attr != nil && attr.GetStringValue() != "" {
 			a.SetFilename(attr.GetStringValue())
 		}
@@ -81,7 +80,7 @@ func (a *Attachment) GetFilename() string {
 
 	if a.Filename == "" {
 		// if the Filename is not already set (custom, using SetFilename, or previously requested) try to extract the data from attributes
-		attr  = a.GetAttribute(MapiPidTagDisplayName, "mapi")
+		attr = a.GetAttribute(MapiPidTagDisplayName, "mapi")
 		if attr != nil && attr.GetStringValue() != "" {
 			a.SetFilename(attr.GetStringValue())
 		}
@@ -89,7 +88,7 @@ func (a *Attachment) GetFilename() string {
 
 	if a.Filename == "" {
 		// if the Filename is not already set (custom, using SetFilename, or previously requested) try to extract the data from attributes
-		attr  = a.GetAttribute(MapiPidTagAttachFilename, "mapi")
+		attr = a.GetAttribute(AttAttachTitle, "mapped")
 		if attr != nil && attr.GetStringValue() != "" {
 			a.SetFilename(attr.GetStringValue())
 		}
@@ -98,21 +97,23 @@ func (a *Attachment) GetFilename() string {
 	if a.Filename == "" {
 		extension := ""
 		// if the Filename is not already set (custom, using SetFilename, or previously requested) try to extract the data from attributes
-		attr  = a.GetAttribute(MapiPidTagAttachExtension, "mapi")
+		attr = a.GetAttribute(MapiPidTagAttachExtension, "mapi")
 		if attr != nil && attr.GetStringValue() != "" {
 			extension = attr.GetStringValue()
 		}
-		a.SetFilename("unkown"+extension)
+		a.SetFilename("unkown" + extension)
 	}
-
 
 	if strings.Count(a.Filename, "?") != 0 || len(a.Filename) > 255 {
 		// the filename has invalid characters or is too long
-		attr  = a.GetAttribute(MapiPidTagAttachFilename, "mapi")
+		attr = a.GetAttribute(MapiPidTagAttachFilename, "mapi")
 		if attr != nil && attr.GetStringValue() != "" {
 			a.SetFilename(attr.GetStringValue())
 		}
 	}
+
+	buf, _ := rtf.ConvertToUtf8([]byte(a.Filename), a.Encoding)
+	a.SetFilename(string(buf))
 
 	return a.Filename
 }
@@ -122,14 +123,14 @@ func (a *Attachment) GetFilename() string {
  * @param  {[type]} a *Attachment)  IsMimeRelated( [description]
  * @return {[type]}   [description]
  */
- func (a *Attachment) HasCID() (bool) {
+func (a *Attachment) HasCID() bool {
 	cid := a.GetCID()
 	// is not embeded -> the attachment data is kept into attAttachData attribute
 	return cid != ""
 }
 
 func (a *Attachment) GetCID() string {
-	attContentIdAttr := a.GetAttribute(MapiPidTagAttachContentId, "mapi");
+	attContentIdAttr := a.GetAttribute(MapiPidTagAttachContentId, "mapi")
 	if attContentIdAttr == nil {
 		return ""
 	}
@@ -148,5 +149,3 @@ func (a *Attachment) GetRenderType() int {
 	}
 	return 0
 }
-
-

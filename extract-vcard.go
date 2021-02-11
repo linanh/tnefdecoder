@@ -1,17 +1,18 @@
 package tnefdecoder
 
 import (
-	"vcard"
-//	"strings"
-//	"bytes"
+	//	"strings"
+	//	"bytes"
 	//"fmt"
-	"strconv"
 	b64 "encoding/base64"
+	"strconv"
+
+	"github.com/linanh/vcard"
 )
 
 func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 	var (
-		attr *Attribute
+		attr      *Attribute
 		attrValue string
 	)
 
@@ -21,26 +22,26 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 		Exporting from Contact Objects
 		The VERSION type is set to 3.0.
 	*/
-/*
-	for _, ta := range t.Attributes {
-		fmt.Printf("\r\nTag: %d ( %X ) Value: %s",ta.Name,ta.Name, string(ta.Data))
-	}
-*/
+	/*
+		for _, ta := range t.Attributes {
+			fmt.Printf("\r\nTag: %d ( %X ) Value: %s",ta.Name,ta.Name, string(ta.Data))
+		}
+	*/
 
 	/*
 	 FN -> PidTagDisplayName || PidTagNormalizedSubject || PidTagConversationTopic
 	 The FN type is generated from either the PidTagDisplayName or PidTagNormalizedSubject property. If both of these properties are set, the PidTagDisplayName property is used.
 	*/
 
-	attr = t.GetAttribute(MapiPidTagDisplayName, "mapi"); //PidTagDisplayName
+	attr = t.GetAttribute(MapiPidTagDisplayName, "mapi") //PidTagDisplayName
 	attrValue = ""
 	if attr == nil {
-		attr = t.GetAttribute(MapiPidTagNormalizedSubject, "mapi"); // PidTagNormalizedSubject
-		if (attr == nil) {
-			attr = t.GetAttribute(MapiPidTagConversationTopic, "mapi"); // PidTagConversationTopic
+		attr = t.GetAttribute(MapiPidTagNormalizedSubject, "mapi") // PidTagNormalizedSubject
+		if attr == nil {
+			attr = t.GetAttribute(MapiPidTagConversationTopic, "mapi") // PidTagConversationTopic
 		}
 	}
-	if (attr != nil) {
+	if attr != nil {
 		attrValue = attr.GetStringValue()
 	}
 	pFnValue := vcard.NewText(attrValue)
@@ -57,35 +58,35 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 	*/
 
 	// family name
-	attr = t.GetAttribute(MapiPidTagSurname, "mapi");
+	attr = t.GetAttribute(MapiPidTagSurname, "mapi")
 	attrFamilyValue := ""
 	if attr != nil {
 		attrFamilyValue = attr.GetStringValue()
 	}
 
 	// given
-	attr = t.GetAttribute(MapiPidTagGivenName, "mapi");
+	attr = t.GetAttribute(MapiPidTagGivenName, "mapi")
 	attrGivenValue := ""
 	if attr != nil {
 		attrGivenValue = attr.GetStringValue()
 	}
 
 	// middle name
-	attr = t.GetAttribute(MapiPidTagMiddleName, "mapi");
+	attr = t.GetAttribute(MapiPidTagMiddleName, "mapi")
 	attrMiddleValue := ""
 	if attr != nil {
 		attrMiddleValue = attr.GetStringValue()
 	}
 
 	// prefix
-	attr = t.GetAttribute(MapiPidTagDisplayNamePrefix, "mapi");
+	attr = t.GetAttribute(MapiPidTagDisplayNamePrefix, "mapi")
 	attrPrefixValue := ""
 	if attr != nil {
 		attrPrefixValue = attr.GetStringValue()
 	}
 
 	// suffix
-	attr = t.GetAttribute(MapiPidTagGeneration, "mapi");
+	attr = t.GetAttribute(MapiPidTagGeneration, "mapi")
 	attrSuffixValue := ""
 	if attr != nil {
 		attrSuffixValue = attr.GetStringValue()
@@ -105,7 +106,7 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 	}
 
 	// nickname
-	attr = t.GetAttribute(MapiPidTagNickname, "mapi");
+	attr = t.GetAttribute(MapiPidTagNickname, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -118,11 +119,10 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 		vc.AddProperty(propNickname)
 	}
 
-
 	for _, att := range t.Attachments {
-		hasPhotoAttr := att.GetAttribute(MapiPidTagAttachmentContactPhoto, "mapi");
+		hasPhotoAttr := att.GetAttribute(MapiPidTagAttachmentContactPhoto, "mapi")
 
-		if hasPhotoAttr!= nil && hasPhotoAttr.GetBoolValue() {
+		if hasPhotoAttr != nil && hasPhotoAttr.GetBoolValue() {
 			// the contact has picture
 			photoValue := vcard.NewPhoto(b64.StdEncoding.EncodeToString(att.Data))
 			photoValue.IsB64Encoded = true
@@ -137,14 +137,12 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 		}
 	}
 
-
-
 	// birthday
 	// vCard data format: BDAY:<date or date-time value>
-	attr = t.GetAttribute(MapiPidTagBirthday, "mapi");
+	attr = t.GetAttribute(MapiPidTagBirthday, "mapi")
 	attrValue = ""
 	if attr != nil {
-		attrValue = strconv.FormatInt(int64(attr.GetIntValue()),10)
+		attrValue = strconv.FormatInt(int64(attr.GetIntValue()), 10)
 	}
 	propBdayValue := vcard.NewText(attrValue)
 
@@ -217,8 +215,6 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 
 		vc.AddProperty(propAdrWork)
 	}
-
-
 
 	// ADR - home
 	adrHome := vcard.NewAddress()
@@ -352,13 +348,12 @@ func ExtractVCard(t *TnefObject, vc vcard.IVCard) {
 		vc.AddProperty(propAdrOther)
 	}
 
-
 	/**
-	: If the TYPE parameter contains "pref", the PidLidPostalAddressId property ([MSOXOCNTC] section 2.2.1.3.9) is set to indicate that that address is the contact's mailing address, and
-the Mailing Address properties of the Contact object are set as specified in [MS-OXOCNTC] section
-2.2.1.3.9.
-When exporting: The address that is selected as the mailing address by the PidLidPostalAddressId
-property gets the value "pref" included in its TYPE parameter.
+		: If the TYPE parameter contains "pref", the PidLidPostalAddressId property ([MSOXOCNTC] section 2.2.1.3.9) is set to indicate that that address is the contact's mailing address, and
+	the Mailing Address properties of the Contact object are set as specified in [MS-OXOCNTC] section
+	2.2.1.3.9.
+	When exporting: The address that is selected as the mailing address by the PidLidPostalAddressId
+	property gets the value "pref" included in its TYPE parameter.
 	*/
 
 	attr = t.GetAttribute(MapiPidLidPostalAddressId, "mapi")
@@ -368,11 +363,10 @@ property gets the value "pref" included in its TYPE parameter.
 	}
 	//fmt.Println("PidLidPostalAddressId: ", attrValue)
 
-
 	//TEL -> : TEL; TYPE=[Type]:[Phone Number]
 
 	// TEL - home
-	attr = t.GetAttribute(MapiPidTagHomeTelephoneNumber, "mapi");
+	attr = t.GetAttribute(MapiPidTagHomeTelephoneNumber, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -391,7 +385,7 @@ property gets the value "pref" included in its TYPE parameter.
 	}
 	//fmt.Println("PidTagHomeTelephoneNumber: ", attrValue)
 
-	attr = t.GetAttribute(MapiPidTagHome2TelephoneNumber, "mapi");
+	attr = t.GetAttribute(MapiPidTagHome2TelephoneNumber, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -412,12 +406,12 @@ property gets the value "pref" included in its TYPE parameter.
 	//fmt.Println("PidTagHome2TelephoneNumber: ", attrValue)
 
 	/**
-	The first TEL type with the TYPE parameter set to "msg", "voice", "video", "bbs", or "modem"
-is imported to PidTagOtherTelephoneNumber ([MS-OXOCNTC] section 2.2.1.4.10).
-Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bbs", or
-"modem" are ignored.
+		The first TEL type with the TYPE parameter set to "msg", "voice", "video", "bbs", or "modem"
+	is imported to PidTagOtherTelephoneNumber ([MS-OXOCNTC] section 2.2.1.4.10).
+	Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bbs", or
+	"modem" are ignored.
 	*/
-	attr = t.GetAttribute(MapiPidTagOtherTelephoneNumber, "mapi");
+	attr = t.GetAttribute(MapiPidTagOtherTelephoneNumber, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -436,9 +430,8 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	}
 	//fmt.Println("PidTagOtherTelephoneNumber: ", attrValue)
 
-
 	// TEL - WORK
-	attr = t.GetAttribute(MapiPidTagBusinessTelephoneNumber, "mapi");
+	attr = t.GetAttribute(MapiPidTagBusinessTelephoneNumber, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -457,7 +450,7 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	}
 	//fmt.Println("PidTagBusinessTelephoneNumber: ", attrValue)
 
-	attr = t.GetAttribute(MapiPidTagBusiness2TelephoneNumber, "mapi");
+	attr = t.GetAttribute(MapiPidTagBusiness2TelephoneNumber, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -476,7 +469,6 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	}
 	//fmt.Println("PidTagBusiness2TelephoneNumber: ", attrValue)
 
-
 	// EMAIL;TYPE=[Type]:[Email]
 	attr = t.GetAttribute(MapiPidLidEmail1EmailAddress, "mapi")
 	attrValue = ""
@@ -491,7 +483,7 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	}
 	//fmt.Println("PidLidEmail1EmailAddress: ", attrValue)
 
-	attr = t.GetAttribute(MapiPidLidEmail2EmailAddress, "mapi");
+	attr = t.GetAttribute(MapiPidLidEmail2EmailAddress, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -504,13 +496,13 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	}
 	//fmt.Println("PidLidEmail2EmailAddress: ", attrValue)
 
-	attr = t.GetAttribute(MapiPidLidEmail3EmailAddress, "mapi");  // (0x80A3 in docs, but 0x803A in other implementations and samples)
+	attr = t.GetAttribute(MapiPidLidEmail3EmailAddress, "mapi") // (0x80A3 in docs, but 0x803A in other implementations and samples)
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
 	}
 	if attrValue == "" {
-		attr = t.GetAttribute(MapiPidLidEmail3EmailAddress_1, "mapi");
+		attr = t.GetAttribute(MapiPidLidEmail3EmailAddress_1, "mapi")
 		attrValue = ""
 		if attr != nil {
 			attrValue = attr.GetStringValue()
@@ -525,7 +517,7 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 	//fmt.Println("PidLidEmail3EmailAddress: ", attrValue)
 
 	//PidTagProfession - ROLE
-	attr = t.GetAttribute(MapiPidTagProfession, "mapi");
+	attr = t.GetAttribute(MapiPidTagProfession, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -539,19 +531,18 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 
 	//PidTagProfession - ORG
 
-	 // ORG - company (PidTagCompanyName)
-	 orgValue := vcard.NewOrganization("", []string{})
+	// ORG - company (PidTagCompanyName)
+	orgValue := vcard.NewOrganization("", []string{})
 
-	attr = t.GetAttribute(MapiPidTagCompanyName, "mapi");
+	attr = t.GetAttribute(MapiPidTagCompanyName, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
 	}
 	orgValue.Company = attrValue
 
-
-	 // ORG - department (PidTagDepartmentName)
-	attr = t.GetAttribute(MapiPidTagDepartmentName, "mapi");
+	// ORG - department (PidTagDepartmentName)
+	attr = t.GetAttribute(MapiPidTagDepartmentName, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
@@ -566,154 +557,150 @@ Additional TEL types with the TYPE parameter set to "msg", "voice", "video", "bb
 		vc.AddProperty(orgProp)
 	}
 
-
-	 // CATEGORIES -PidLidCategories
-	 categProp := vcard.NewProperty("categories")
-	 attr = t.GetAttribute(0x00009000, "mapi");
-	 attrValue = ""
-	 if attr != nil {
+	// CATEGORIES -PidLidCategories
+	categProp := vcard.NewProperty("categories")
+	attr = t.GetAttribute(0x00009000, "mapi")
+	attrValue = ""
+	if attr != nil {
 		for _, attrValue = range attr.GetStringValueArray() {
 			if attrValue != "" {
 				categProp.AddValue(vcard.NewText(attrValue))
 			}
-		 }
-	 }
+		}
+	}
 
-	 if len(categProp.GetValue()) > 0  {
+	if len(categProp.GetValue()) > 0 {
 		vc.AddProperty(categProp)
-	 }
+	}
 
-	 // NOTE - PidTagBody
-	 attr = t.GetAttribute(MapiPidTagBody, "mapi")
-	 attrValue = ""
-	 if attr != nil {
-		 attrValue = attr.GetStringValue()
-	 }
+	// NOTE - PidTagBody
+	attr = t.GetAttribute(MapiPidTagBody, "mapi")
+	attrValue = ""
+	if attr != nil {
+		attrValue = attr.GetStringValue()
+	}
 
-	 noteValue := vcard.NewText(attrValue)
-	 if !noteValue.IsEmpty() {
-		 noteProp := vc.CreateProperty("note")
-		 noteProp.AddValue(noteValue)
-		 vc.AddProperty(noteProp)
-	 }
+	noteValue := vcard.NewText(attrValue)
+	if !noteValue.IsEmpty() {
+		noteProp := vc.CreateProperty("note")
+		noteProp.AddValue(noteValue)
+		vc.AddProperty(noteProp)
+	}
 
-	 // REV - PidTagLastModificationTime
-	 attr = t.GetAttribute(AttDateModified, "mapped")
-	 attrValue = ""
-	 if (attr != nil) {
-		attrValue = strconv.FormatInt(int64(attr.GetIntValue()),10)
-	 }
+	// REV - PidTagLastModificationTime
+	attr = t.GetAttribute(AttDateModified, "mapped")
+	attrValue = ""
+	if attr != nil {
+		attrValue = strconv.FormatInt(int64(attr.GetIntValue()), 10)
+	}
 
+	revValue := vcard.NewText(attrValue)
+	if !revValue.IsEmpty() {
+		revProp := vc.CreateProperty("rev")
+		revProp.AddValue(revValue)
+		vc.AddProperty(revProp)
+	}
 
-	 revValue := vcard.NewText(attrValue)
-	 if !revValue.IsEmpty() {
-		 revProp := vc.CreateProperty("rev")
-		 revProp.AddValue(revValue)
-		 vc.AddProperty(revProp)
-	 }
+	//URL - PidTagPersonalHomePage
+	attr = t.GetAttribute(MapiPidTagPersonalHomePage, "mapi")
+	attrValue = ""
+	if attr != nil {
+		attrValue = attr.GetStringValue()
+	}
 
-	 //URL - PidTagPersonalHomePage
-	 attr = t.GetAttribute(MapiPidTagPersonalHomePage, "mapi")
-	 attrValue = ""
-	 if attr != nil {
-		 attrValue = attr.GetStringValue()
-	 }
+	urlHomeValue := vcard.NewText(attrValue)
+	if !urlHomeValue.IsEmpty() {
+		urlHomeProp := vc.CreateProperty("url")
+		urlHomeProp.AddValue(urlHomeValue)
 
-	 urlHomeValue := vcard.NewText(attrValue)
-	 if !urlHomeValue.IsEmpty() {
-		 urlHomeProp := vc.CreateProperty("url")
-		 urlHomeProp.AddValue(urlHomeValue)
+		urlHomeParamType := vcard.NewParameter("type")
+		urlHomeParamType.AddValue("home")
+		urlHomeProp.AddParameter(urlHomeParamType)
 
-		 urlHomeParamType := vcard.NewParameter("type")
-		 urlHomeParamType.AddValue("home")
-		 urlHomeProp.AddParameter(urlHomeParamType)
+		vc.AddProperty(urlHomeProp)
+	}
 
-		 vc.AddProperty(urlHomeProp)
-	 }
+	//URL -
+	attr = t.GetAttribute(MapiPidTagBusinessHomePage, "mapi")
+	attrValue = ""
+	if attr != nil {
+		attrValue = attr.GetStringValue()
+	}
 
-	 //URL -
-	 attr = t.GetAttribute(MapiPidTagBusinessHomePage, "mapi")
-	 attrValue = ""
-	 if attr != nil {
-		 attrValue = attr.GetStringValue()
-	 }
+	urlWorkValue := vcard.NewText(attrValue)
+	if !urlWorkValue.IsEmpty() {
+		urlWorkProp := vc.CreateProperty("url")
+		urlWorkProp.AddValue(urlWorkValue)
 
-	 urlWorkValue := vcard.NewText(attrValue)
-	 if !urlWorkValue.IsEmpty() {
-		 urlWorkProp := vc.CreateProperty("url")
-		 urlWorkProp.AddValue(urlWorkValue)
+		urlWorkParamType := vcard.NewParameter("type")
+		urlWorkParamType.AddValue("work")
+		urlWorkProp.AddParameter(urlWorkParamType)
 
-		 urlWorkParamType := vcard.NewParameter("type")
-		 urlWorkParamType.AddValue("work")
-		 urlWorkProp.AddParameter(urlWorkParamType)
+		vc.AddProperty(urlWorkProp)
+	}
 
-		 vc.AddProperty(urlWorkProp)
-	 }
+	// CLASS - PidTagSensitivity -> removed in vcard v4.0
 
-
-	 // CLASS - PidTagSensitivity -> removed in vcard v4.0
-
-		attr = t.GetAttribute(MapiPidTagSensitivity, "mapi");
-		attrValue = ""
-		if attr != nil {
-			switch attr.GetIntValue() {
-				case 0:
-					attrValue = "PUBLIC"
-				case 2:
-					attrValue = "PRIVATE"
-				case 3:
-					attrValue = "CONFIDENTIAL"
-			}
+	attr = t.GetAttribute(MapiPidTagSensitivity, "mapi")
+	attrValue = ""
+	if attr != nil {
+		switch attr.GetIntValue() {
+		case 0:
+			attrValue = "PUBLIC"
+		case 2:
+			attrValue = "PRIVATE"
+		case 3:
+			attrValue = "CONFIDENTIAL"
 		}
+	}
 
-		classValue := vcard.NewText(attrValue)
-		if !classValue.IsEmpty() {
-			classProp := vc.CreateProperty("class")
-			if classProp != nil {
-				classProp.AddValue(classValue)
-				vc.AddProperty(classProp)
-			}
+	classValue := vcard.NewText(attrValue)
+	if !classValue.IsEmpty() {
+		classProp := vc.CreateProperty("class")
+		if classProp != nil {
+			classProp.AddValue(classValue)
+			vc.AddProperty(classProp)
 		}
+	}
 
-	 // KEY - PidTagUserX509Certificate
-	 /*
-	 attr = t.GetMapiAttribute(0x3A70);
-	 attrValue = ""
-	 if attr != nil {
-		 //@TODO: extract correct certificat value (PidTagUserX509Certificate [MS-OXOABK] - remove first 4 bytes - 2 bytes for tag & 2 byte for length)
-		 attrValue = strings.TrimRight(string(attr.Data), "\x00")
-	 }
+	// KEY - PidTagUserX509Certificate
+	/*
+		 attr = t.GetMapiAttribute(0x3A70);
+		 attrValue = ""
+		 if attr != nil {
+			 //@TODO: extract correct certificat value (PidTagUserX509Certificate [MS-OXOABK] - remove first 4 bytes - 2 bytes for tag & 2 byte for length)
+			 attrValue = strings.TrimRight(string(attr.Data), "\x00")
+		 }
 
-	 keyValue := vcard.NewText()
-	 keyValue.SetValue(attrValue)
-	 if !keyValue.IsEmpty() {
-		keyProp := vcard.NewProperty("key")
-		keyProp.AddValue(keyValue)
+		 keyValue := vcard.NewText()
+		 keyValue.SetValue(attrValue)
+		 if !keyValue.IsEmpty() {
+			keyProp := vcard.NewProperty("key")
+			keyProp.AddValue(keyValue)
 
-		keyParamType := vcard.NewParameter("encoding")
-		keyParamType.AddValue("b")
-		keyProp.AddParameter(keyParamType)
+			keyParamType := vcard.NewParameter("encoding")
+			keyParamType.AddValue("b")
+			keyProp.AddParameter(keyParamType)
 
-		 vc.AddProperty(keyProp)
-	 }*/
+			 vc.AddProperty(keyProp)
+		 }*/
 
-	 //X-MS-OL-DESIGN
-	 attr = t.GetAttribute(MapiPidLidBusinessCardDisplayDefinition, "mapi")
-	 attrValue = ""
-	 if attr != nil {
-		 // @ToDO - decode binary [MS-OXOCNTC] 2.2.1.7.1
-	 }
+	//X-MS-OL-DESIGN
+	attr = t.GetAttribute(MapiPidLidBusinessCardDisplayDefinition, "mapi")
+	attrValue = ""
+	if attr != nil {
+		// @ToDO - decode binary [MS-OXOCNTC] 2.2.1.7.1
+	}
 
-	 designValue := vcard.NewText(attrValue)
-	 if !designValue.IsEmpty() {
+	designValue := vcard.NewText(attrValue)
+	if !designValue.IsEmpty() {
 		designProp := vc.CreateProperty("X-MS-OL-DESIGN")
 		designProp.AddValue(designValue)
 		vc.AddProperty(designProp)
-	 }
-
+	}
 
 	//FBURL - available only on 4.0
-	attr = t.GetAttribute(MapiPidLidFreeBusyLocation, "mapi");
+	attr = t.GetAttribute(MapiPidLidFreeBusyLocation, "mapi")
 	attrValue = ""
 	if attr != nil {
 		attrValue = attr.GetStringValue()
