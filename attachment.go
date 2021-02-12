@@ -149,3 +149,13 @@ func (a *Attachment) GetRenderType() int {
 	}
 	return 0
 }
+
+//Get attachment mime type
+func (a *Attachment) GetMimeType() string {
+	attMimeTagAttr := a.GetAttribute(MapiPidTagAttachMimeTag, "mapi")
+	if attMimeTagAttr == nil {
+		return ""
+	}
+	return attMimeTagAttr.GetStringValue()
+
+}
